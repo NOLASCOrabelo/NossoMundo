@@ -84,6 +84,9 @@ app.get('/', (req, res) => {
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'styles.css'));
 });
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'script.js'));
+});
 app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
 });
