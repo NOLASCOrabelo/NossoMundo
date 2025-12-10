@@ -1,31 +1,35 @@
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
-const path = require('path'); // <--- NOVO: Importante para achar os arquivos
+const path = require('path'); 
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// --- NOVO: Configura o servidor para mostrar o site estático ---
-// Diz para o Express que os arquivos HTML/CSS/Imagens estão na pasta atual
+// ========================================================
+// 1. A MÁGICA ESTÁ AQUI (CORREÇÃO DAS IMAGENS E CSS)
+// ========================================================
+// Isso diz: "Pode entregar qualquer arquivo que esteja nesta pasta"
+// Incluindo a pasta "src" (onde estão as imagens), o "styles.css" e o "script.js"
 app.use(express.static(path.join(__dirname)));
 
-// CONFIGURAÇÃO DO BANCO DE DADOS
+
+// ========================================================
+// 2. CONFIGURAÇÃO DO BANCO
+// ========================================================
 const pool = new Pool({
     connectionString: process.env.POSTGRES_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
+    ssl: { rejectUnauthorized: false }
 });
 
-// --- ROTEADOR DA API ---
+// ========================================================
+// 3. ROTAS DA API (BACKEND)
+// ========================================================
 const router = express.Router();
 
-// Suas rotas continuam iguais...
 router.get('/gifts', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM wishlist ORDER BY id ASC');
@@ -72,21 +76,16 @@ router.delete('/gifts/:id', async (req, res) => {
     }
 });
 
-// Aplica as rotas da API
 app.use('/api', router);
 
-// --- NOVO: Rota de Segurança ---
-// Se o Vercel mandar a pessoa para a raiz "/" e não tiver nada,
-// o Express força o envio do index.html
-app.get('/', (req, res) => {
+// ========================================================
+// 4. ROTA FINAL (FRONTEND)
+// ========================================================
+// Se não for API e não for arquivo estático, entrega o site
+app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'styles.css'));
-});
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'script.js'));
-});
+
 app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
 });
