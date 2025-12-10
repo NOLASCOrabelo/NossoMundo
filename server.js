@@ -78,11 +78,11 @@ router.delete('/gifts/:id', async (req, res) => {
 
 app.use('/api', router);
 
-// ========================================================
-// 4. ROTA FINAL (FRONTEND)
-// ========================================================
-// Se não for API e não for arquivo estático, entrega o site
-app.get('*', (req, res) => {
+// TROQUE ISSO:
+// app.get('*', (req, res) => { ...
+
+// POR ISSO (Ajuste para Express 5):
+app.get(/(.*)/, (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
