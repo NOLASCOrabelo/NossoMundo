@@ -81,7 +81,9 @@ app.use('/api', router);
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
-
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'styles.css'));
+});
 app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
 });
