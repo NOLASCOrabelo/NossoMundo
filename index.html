@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nosso Mundo - Stitch & Angel</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <header>
+        <img src="src/img/navbar_v2.png" alt="Navbar Fundo" class="header-bg-img">
+        <div class="nav-overlay">
+            <nav class="nav-links">
+                <a href="#home"><i class="fa-solid fa-house"></i></a>
+                <a href="#motivos"><i class="fa-solid fa-hourglass-half"></i></a>
+                <div class="espaco-stitch"></div>
+                <a href="#relogio"><i class="fa-solid fa-list-ul"></i></a>
+                <a href="#wishlist"><i class="fa-solid fa-gift"></i></a>
+            </nav>
+        </div>
+    </header>
+
+    <section id="home" class="hero">
+        <div class="container poster-wrapper">
+            <div class="absolute-layer texto-topo">
+                <h1>Bem-vindos ao <br> Nosso Mundo!</h1>
+            </div>
+
+            <img src="src/img/Stitch.png" alt="Fundo Stitch" class="main-poster-img">
+
+            <div class="absolute-layer texto-intro">
+                <div id="motivos"></div>
+                <p>
+                    Uma pequena celebração do nosso amor e de desejos, com um toque de Stitch!
+                </p>
+            </div>
+
+            <div class="hanging-decoration hidden">
+                <div class="timer-circle-content ">
+                    <div id="relogio"></div>
+                    <img src="src/img/relogio-removebg-preview.png" alt="Relógio" class="relogio-bg">
+                    <div class="timer-display">
+                        <div class="time-group">
+                            <span id="months-count" class="time-num">0</span>
+                            <span class="time-label">Meses</span>
+                        </div>
+                        <div class="time-group">
+                            <span id="days-count" class="time-num rosa">0</span>
+                            <span class="time-label">Dias</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-ribbon">
+                    <svg viewBox="0 0 300 60" class="curved-text-svg">
+                        <path id="curve-path" d="M 20,40 Q 150,10 280,40" fill="transparent" />
+                        <text width="300">
+                            <textPath xlink:href="#curve-path" startOffset="50%" text-anchor="middle"
+                                class="ribbon-text-style">
+                                <tspan id="texto-total-dias">Calculando...</tspan>
+                            </textPath>
+                        </text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="reasons" class="section-pad bg-gradient">
+        <div class="container">
+            <h2 class="title-decor white-text hidden">Por que te amo</h2>
+
+            <div class="carousel-scroll">
+                <div class="motivo-card hidden">
+                    <img src="src/img/Stitch.svg" alt="Stitch" class="card-svg-icon">
+                    <h3>Seu Sorriso</h3>
+                    <p>Sempre que você sorri, meu mundo fica mais feliz.</p>
+                </div>
+                <div class="motivo-card rosa-card hidden">
+                    <img src="src/img/angle.svg" alt="Angel" class="card-svg-icon">
+                    <h3>Seu Olhar</h3>
+                    <p>Olhar no seus olhos, me faz sentir sua alma e amor junto.</p>
+                </div>
+                <div class="motivo-card blue-card hidden">
+                    <img src="src/img/Stitch.svg" alt="Aventuras" class="card-svg-icon">
+                    <h3>Momentos</h3>
+                    <p>Cada momento ao seu lado é um momento especial.</p>
+                </div>
+            </div>
+            <p class="swipe-hint hidden"><i class="fa-solid fa-arrow-right"></i> Arraste para o lado</p>
+        </div>
+    </section>
+
+    <section id="wishlist" class="section-pad">
+        <div class="container">
+            <h2 class="title-decor hidden">Lista de Desejos</h2>
+
+            <div class="filter-scroll">
+                <button class="filter-btn active hidden" onclick="filterGifts('all')">Todos</button>
+                <button class="filter-btn hidden" onclick="filterGifts('casa')">Casa</button>
+                <button class="filter-btn hidden" onclick="filterGifts('exp')">Viagens</button>
+                <button class="filter-btn hidden" onclick="filterGifts('tech')">Tech</button>
+            </div>
+
+            <div id="gift-container" class="gift-list">
+            </div>
+
+            <button class="fab-add" onclick="openModal()">
+                <i class="fa-solid fa-plus"></i>
+            </button>
+        </div>
+    </section>
+
+    <footer>
+        <p>Feito com ❤️ pelo seu "bem"</p>
+    </footer>
+
+    <div id="giftModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modalTitle">Novo Desejo</h3>
+            <input type="hidden" id="giftId">
+            <label>O que é?</label>
+            <input type="text" id="giftName" placeholder="Ex: Cafeteira">
+            <label>Preço</label>
+            <input type="text" id="giftPrice" placeholder="R$ 0,00">
+            <label>Imagem</label>
+            <input type="file" id="giftFileInput" accept="image/*" onchange="previewImage()">
+            <img id="imagePreview" src="" style="display:none; width:100%; margin-top:10px; border-radius:10px;">
+            <input type="hidden" id="giftImageBase64">
+            <label>Categoria</label>
+            <select id="giftCategory">
+                <option value="casa">Casa</option>
+                <option value="exp">Viagens</option>
+                <option value="tech">Tech</option>
+            </select>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+                <button class="btn-save" onclick="saveGift()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-content" style="text-align: center;">
+            <h3 style="color: #f44336;">Excluir?</h3>
+            <p>Tem certeza que deseja apagar este item?</p>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeDeleteModal()">Não</button>
+                <button class="btn-save" onclick="confirmDelete()" style="background: #f44336;">Sim, excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

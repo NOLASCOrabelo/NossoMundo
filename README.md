@@ -1,0 +1,1 @@
+Um projeto feito de presente para minha namorada, aonde envolve toda parte do JS e criação do API feita por https://github.com/NickGMaia/NossoMundo/commits?author=NickGMaia e a parte de tabelas e banco de dados feita por mim.
