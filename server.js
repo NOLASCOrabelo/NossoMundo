@@ -1,27 +1,31 @@
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
+const path = require('path'); // <--- NOVO: Importante para achar os arquivos
 
 const app = express();
-// O Vercel define a porta automaticamente, ou usa 5000 localmente
 const port = process.env.PORT || 5000;
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
 
-// CONFIGURAÇÃO DO BANCO DE DADOS (Neon / Nuvem)
+// --- NOVO: Configura o servidor para mostrar o site estático ---
+// Diz para o Express que os arquivos HTML/CSS/Imagens estão na pasta atual
+app.use(express.static(path.join(__dirname)));
+
+// CONFIGURAÇÃO DO BANCO DE DADOS
 const pool = new Pool({
     connectionString: process.env.POSTGRES_URL,
     ssl: {
-        rejectUnauthorized: false // Obrigatório para conexões seguras na nuvem
+        rejectUnauthorized: false
     }
 });
 
-// --- ROTEADOR (A Mágica acontece aqui) ---
+// --- ROTEADOR DA API ---
 const router = express.Router();
 
-// 1. Rota para PEGAR todos os presentes (GET) -> Agora é /api/gifts
+// Suas rotas continuam iguais...
 router.get('/gifts', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM wishlist ORDER BY id ASC');
@@ -32,7 +36,6 @@ router.get('/gifts', async (req, res) => {
     }
 });
 
-// 2. Rota para CRIAR um presente (POST) -> Agora é /api/gifts
 router.post('/gifts', async (req, res) => {
     try {
         const { name, price, image, category } = req.body;
@@ -47,7 +50,6 @@ router.post('/gifts', async (req, res) => {
     }
 });
 
-// 3. Rota para ATUALIZAR status (PUT) -> Agora é /api/gifts/:id/done
 router.put('/gifts/:id/done', async (req, res) => {
     try {
         const { id } = req.params;
@@ -59,7 +61,6 @@ router.put('/gifts/:id/done', async (req, res) => {
     }
 });
 
-// 4. Rota para DELETAR (DELETE) -> Agora é /api/gifts/:id
 router.delete('/gifts/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -71,14 +72,18 @@ router.delete('/gifts/:id', async (req, res) => {
     }
 });
 
-// Aplica o roteador com o prefixo /api
-// Isso significa que todas as rotas acima começam com /api
+// Aplica as rotas da API
 app.use('/api', router);
 
-// Inicia o servidor
+// --- NOVO: Rota de Segurança ---
+// Se o Vercel mandar a pessoa para a raiz "/" e não tiver nada,
+// o Express força o envio do index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
 });
 
-// Exporta o app para o Vercel (Serverless)
 module.exports = app;
