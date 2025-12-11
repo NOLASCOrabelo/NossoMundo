@@ -3,18 +3,13 @@ const cors = require('cors');
 const { Pool } = require('pg');
 const path = require('path'); 
 
-const app = express();
-const port = process.env.PORT || 5000;
+const path = require('path'); // Garanta que isso está lá no topo
 
 app.use(cors());
 app.use(express.json());
 
-// ========================================================
-// 1. A MÁGICA ESTÁ AQUI (CORREÇÃO DAS IMAGENS E CSS)
-// ========================================================
-// Isso diz: "Pode entregar qualquer arquivo que esteja nesta pasta"
-// Incluindo a pasta "src" (onde estão as imagens), o "styles.css" e o "script.js"
-app.use(express.static(path.join(__dirname)));
+// Dizemos que a pasta estática é a 'public' usando o diretório atual do processo (cwd)
+app.use(express.static(path.join(process.cwd(), 'public')));
 
 
 // ========================================================
