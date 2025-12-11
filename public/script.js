@@ -237,7 +237,7 @@ function closeDeleteModal() {
     document.getElementById('deleteModal').classList.remove('open');
 }
 
-// 1. Função utilitária para comprimir imagem
+// Função para diminuir a qualidade e tamanho da foto
 function compressImage(file, maxWidth, quality) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -250,7 +250,7 @@ function compressImage(file, maxWidth, quality) {
                 let width = img.width;
                 let height = img.height;
 
-                // Redimensiona mantendo a proporção se for muito grande
+                // Se for maior que o limite, redimensiona
                 if (width > maxWidth) {
                     height *= maxWidth / width;
                     width = maxWidth;
@@ -261,17 +261,15 @@ function compressImage(file, maxWidth, quality) {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // Converte para Base64 comprimido (JPEG com qualidade reduzida)
-                // quality vai de 0 a 1 (0.7 é um bom balanço)
+                // Converte para JPEG com qualidade 0.7 (70%)
                 resolve(canvas.toDataURL('image/jpeg', quality));
             };
-            img.onerror = (err) => reject(err);
         };
-        reader.onerror = (err) => reject(err);
+        reader.onerror = (error) => reject(error);
     });
 }
 
-// 2. Nova função de Preview (agora assíncrona)
+// Função chamada quando escolhe a foto
 async function previewImage() {
     const fileInput = document.getElementById('giftFileInput');
     const preview = document.getElementById('imagePreview');
@@ -279,15 +277,15 @@ async function previewImage() {
 
     if (fileInput && fileInput.files && fileInput.files[0]) {
         try {
-            // Comprime a imagem para no máx 800px de largura e qualidade 0.7
+            // Chama a compressão: Max 800px de largura, qualidade 0.7
             const compressedBase64 = await compressImage(fileInput.files[0], 800, 0.7);
             
             preview.src = compressedBase64;
             preview.style.display = "block";
             hiddenInput.value = compressedBase64; // Salva a versão LEVE
         } catch (error) {
-            console.error("Erro ao processar imagem:", error);
-            alert("Erro ao carregar a imagem. Tente outra.");
+            console.error("Erro na imagem:", error);
+            alert("Erro ao processar a imagem.");
         }
     }
 }
