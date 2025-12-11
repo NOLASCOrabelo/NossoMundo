@@ -237,7 +237,8 @@ function closeDeleteModal() {
     document.getElementById('deleteModal').classList.remove('open');
 }
 
-// Função para diminuir a qualidade e tamanho da foto
+// public/script.js
+
 function compressImage(file, maxWidth, quality) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -250,7 +251,7 @@ function compressImage(file, maxWidth, quality) {
                 let width = img.width;
                 let height = img.height;
 
-                // Se for maior que o limite, redimensiona
+                // Força a imagem a ter no máximo 1000px de largura (isso reduz MUITO o tamanho)
                 if (width > maxWidth) {
                     height *= maxWidth / width;
                     width = maxWidth;
@@ -261,15 +262,14 @@ function compressImage(file, maxWidth, quality) {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // Converte para JPEG com qualidade 0.7 (70%)
-                resolve(canvas.toDataURL('image/jpeg', quality));
+                // Qualidade 0.6 (60%) é suficiente para celular e garante arquivo pequeno
+                resolve(canvas.toDataURL('image/jpeg', 0.6)); 
             };
         };
         reader.onerror = (error) => reject(error);
     });
 }
 
-// Função chamada quando escolhe a foto
 async function previewImage() {
     const fileInput = document.getElementById('giftFileInput');
     const preview = document.getElementById('imagePreview');
@@ -277,12 +277,16 @@ async function previewImage() {
 
     if (fileInput && fileInput.files && fileInput.files[0]) {
         try {
-            // Chama a compressão: Max 800px de largura, qualidade 0.7
-            const compressedBase64 = await compressImage(fileInput.files[0], 800, 0.7);
+            // Chama a compressão: Max 1000px, Qualidade 0.6
+            const compressedBase64 = await compressImage(fileInput.files[0], 1000, 0.6);
             
+            // Verifica o tamanho final (apenas para debug no console)
+            console.log("Tamanho original:", fileInput.files[0].size);
+            console.log("Tamanho comprimido aprox:", compressedBase64.length * 0.75);
+
             preview.src = compressedBase64;
             preview.style.display = "block";
-            hiddenInput.value = compressedBase64; // Salva a versão LEVE
+            hiddenInput.value = compressedBase64; 
         } catch (error) {
             console.error("Erro na imagem:", error);
             alert("Erro ao processar a imagem.");
