@@ -111,13 +111,15 @@
             <h2 class="title-decor hidden">Lista de Desejos</h2>
 
             <div class="filter-scroll">
-                <button class="filter-btn active hidden" onclick="filterGifts('all')">Todos</button>
-                <button class="filter-btn hidden" onclick="filterGifts('casa')">Casa</button>
-                <button class="filter-btn hidden" onclick="filterGifts('exp')">Viagens</button>
-                <button class="filter-btn hidden" onclick="filterGifts('tech')">Tech</button>
-                <button class="filter-btn hidden" onclick="filterGifts('Sonhos')">Sonho</button>
-                <button class="filter-btn hidden" onclick="filterGifts('Higiene')">Cuidados pessoal</button>
-                <button class="filter-btn hidden" onclick="filterGifts('Comida')">Queria comer</button>
+               <button class="filter-btn active hidden" onclick="filterGifts('all')">Todos</button>
+               <button class="filter-btn hidden" onclick="filterGifts('casa')">Casa</button>
+               <button class="filter-btn hidden" onclick="filterGifts('exp')">Viagens</button>
+               <button class="filter-btn hidden" onclick="filterGifts('tech')">Tech</button>
+
+               <button class="filter-btn hidden" onclick="filterGifts('comer')">Comidas</button>
+               <button class="filter-btn hidden" onclick="filterGifts('cuidados')">Cuidados</button>
+               <button class="filter-btn hidden" onclick="filterGifts('sonho')">Sonhos</button>
+</div>
             </div>
 
             <div id="gift-container" class="gift-list">
@@ -150,9 +152,10 @@
                 <option value="casa">Casa</option>
                 <option value="exp">Viagens</option>
                 <option value="tech">Tech</option>
-                <option value="Queria comer">Queria comer</option>
-                <option value="Cuidado pessoal">Cuidado pessoal</option>
-                <option value="Sonho">Sonho</option>
+
+                <option value="comer">Queria comer</option>
+                <option value="cuidados">Cuidado pessoal</option>
+                <option value="sonho">Sonho</option>
             </select>
             <div class="modal-actions">
                 <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
