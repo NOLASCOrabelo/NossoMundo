@@ -1,0 +1,20 @@
+{
+  "name": "Nosso Mundo",
+  "short_name": "Nosso Mundo",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#dff5ff",
+  "theme_color": "#84d5fa",
+  "icons": [
+    {
+      "src": "src/img/stitch.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "src/img/stitch.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
