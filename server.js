@@ -1,8 +1,7 @@
-const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
-const path = require('path'); 
+const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -10,21 +9,17 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Dizemos que a pasta estática é a 'public' usando o diretório atual do processo (cwd)
+// CONFIGURAÇÃO CRÍTICA PARA O VERCEL:
+// Serve todos os arquivos da pasta 'public' (HTML, CSS, JS, Imagens)
 app.use(express.static(path.join(process.cwd(), 'public')));
 
-
-// ========================================================
-// 2. CONFIGURAÇÃO DO BANCO
-// ========================================================
+// --- BANCO DE DADOS ---
 const pool = new Pool({
     connectionString: process.env.POSTGRES_URL,
     ssl: { rejectUnauthorized: false }
 });
 
-// ========================================================
-// 3. ROTAS DA API (BACKEND)
-// ========================================================
+// --- ROTAS DA API ---
 const router = express.Router();
 
 router.get('/gifts', async (req, res) => {
@@ -75,13 +70,9 @@ router.delete('/gifts/:id', async (req, res) => {
 
 app.use('/api', router);
 
-// TROQUE ISSO:
-// app.get('*', (req, res) => { ...
-
-// POR ISSO (Ajuste para Express 5):
-app.get(/(.*)/, (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
+// --- ATENÇÃO: ROTA REMOVIDA ---
+// Removemos o app.get(/(.*)/) pois ele estava causando o Erro 500.
+// O express.static lá em cima já vai entregar o index.html automaticamente.
 
 app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
