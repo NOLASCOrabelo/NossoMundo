@@ -237,20 +237,58 @@ function closeDeleteModal() {
     document.getElementById('deleteModal').classList.remove('open');
 }
 
-// Processamento de Imagem 
-function previewImage() {
+// 1. Função utilitária para comprimir imagem
+function compressImage(file, maxWidth, quality) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // Redimensiona mantendo a proporção se for muito grande
+                if (width > maxWidth) {
+                    height *= maxWidth / width;
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Converte para Base64 comprimido (JPEG com qualidade reduzida)
+                // quality vai de 0 a 1 (0.7 é um bom balanço)
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+    });
+}
+
+// 2. Nova função de Preview (agora assíncrona)
+async function previewImage() {
     const fileInput = document.getElementById('giftFileInput');
     const preview = document.getElementById('imagePreview');
     const hiddenInput = document.getElementById('giftImageBase64');
 
     if (fileInput && fileInput.files && fileInput.files[0]) {
-        const reader = new FileReader();
-        reader.onloadend = function () {
-            preview.src = reader.result;
+        try {
+            // Comprime a imagem para no máx 800px de largura e qualidade 0.7
+            const compressedBase64 = await compressImage(fileInput.files[0], 800, 0.7);
+            
+            preview.src = compressedBase64;
             preview.style.display = "block";
-            hiddenInput.value = reader.result; 
+            hiddenInput.value = compressedBase64; // Salva a versão LEVE
+        } catch (error) {
+            console.error("Erro ao processar imagem:", error);
+            alert("Erro ao carregar a imagem. Tente outra.");
         }
-        reader.readAsDataURL(fileInput.files[0]); 
     }
 }
 
