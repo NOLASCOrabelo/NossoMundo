@@ -7,12 +7,12 @@
   "theme_color": "#84d5fa",
   "icons": [
     {
-      "src": "src/img/stitch_v2.svg",
+      "src": "src/img/stitch_v2.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "src/img/stitch_v2.svg",
+      "src": "src/img/stitch_v2.png",
       "sizes": "512x512",
       "type": "image/png"
     }
