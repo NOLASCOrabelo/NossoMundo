@@ -7,21 +7,22 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 app.use(cors());
-app.use(express.json());
-app.use(express.json({ limit: '20mb' }));
-app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
-// CONFIGURAÇÃO CRÍTICA PARA O VERCEL:
-// Serve todos os arquivos da pasta 'public' (HTML, CSS, JS, Imagens)
+// --- AQUI ESTÁ O SEGREDO ---
+// Definimos 4MB. Isso é o limite seguro da Vercel.
+// Se passar de 4MB, a Vercel corta. Se for menos, o Express aceita.
+app.use(express.json({ limit: '4mb' }));
+app.use(express.urlencoded({ limit: '4mb', extended: true }));
+
+// Serve os arquivos da pasta public
 app.use(express.static(path.join(process.cwd(), 'public')));
 
-// --- BANCO DE DADOS ---
+// Banco de Dados
 const pool = new Pool({
     connectionString: process.env.POSTGRES_URL,
     ssl: { rejectUnauthorized: false }
 });
 
-// --- ROTAS DA API ---
 const router = express.Router();
 
 router.get('/gifts', async (req, res) => {
@@ -37,14 +38,20 @@ router.get('/gifts', async (req, res) => {
 router.post('/gifts', async (req, res) => {
     try {
         const { name, price, image, category } = req.body;
+        
+        // Proteção extra no servidor
+        if (image && image.length > 4500000) {
+            return res.status(413).send('Imagem muito grande para o servidor.');
+        }
+
         const newGift = await pool.query(
             'INSERT INTO wishlist (name, price, image, category, done) VALUES ($1, $2, $3, $4, $5) RETURNING id',
             [name, price, image, category, false]
         );
         res.json({ id: newGift.rows[0].id, message: 'Gift created' });
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Erro ao salvar');
+        console.error("Erro ao salvar:", err.message);
+        res.status(500).send('Erro ao salvar no banco');
     }
 });
 
@@ -54,7 +61,6 @@ router.put('/gifts/:id/done', async (req, res) => {
         await pool.query('UPDATE wishlist SET done = NOT done WHERE id = $1', [id]);
         res.json({ message: 'Status updated' });
     } catch (err) {
-        console.error(err.message);
         res.status(500).send('Erro ao atualizar');
     }
 });
@@ -65,16 +71,11 @@ router.delete('/gifts/:id', async (req, res) => {
         await pool.query('DELETE FROM wishlist WHERE id = $1', [id]);
         res.json({ message: 'Gift deleted' });
     } catch (err) {
-        console.error(err.message);
         res.status(500).send('Erro ao deletar');
     }
 });
 
 app.use('/api', router);
-
-// --- ATENÇÃO: ROTA REMOVIDA ---
-// Removemos o app.get(/(.*)/) pois ele estava causando o Erro 500.
-// O express.static lá em cima já vai entregar o index.html automaticamente.
 
 app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
