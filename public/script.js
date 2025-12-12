@@ -2,12 +2,16 @@ const API_URL = '/api/gifts';
 let gifts = []; 
 let currentFilter = 'all';
 let editingId = null;
+let idToDelete = null;
 
+// ======================================================
+// 1. INICIALIZAÇÃO (Traz de volta o Observer)
+// ======================================================
 document.addEventListener('DOMContentLoaded', () => {
     fetchGifts(); 
     atualizarContador();
     
-    // Configura input de preço
+    // Configura input de preço para formatar R$
     const priceInput = document.getElementById('giftPrice');
     if (priceInput) {
         priceInput.addEventListener('input', (e) => {
@@ -17,9 +21,24 @@ document.addEventListener('DOMContentLoaded', () => {
             e.target.value = value;
         });
     }
+
+    // --- AQUI ESTÁ A CORREÇÃO DAS ANIMAÇÕES ---
+    // Faz os elementos aparecerem quando rola a tela
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('show');
+            }
+        });
+    });
+
+    const hiddenElements = document.querySelectorAll('.hidden');
+    hiddenElements.forEach((el) => observer.observe(el));
 });
 
-// --- COMPRESSÃO DE IMAGEM ---
+// ======================================================
+// 2. COMPRESSÃO DE IMAGEM (Mantida a que funcionou)
+// ======================================================
 function compressImage(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -29,6 +48,7 @@ function compressImage(file) {
             img.src = event.target.result;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
+                // Mantém 600px e 50% qualidade (Leve para celular)
                 const maxWidth = 600; 
                 let width = img.width;
                 let height = img.height;
@@ -66,7 +86,9 @@ async function previewImage() {
     }
 }
 
-// --- FUNÇÕES DE API ---
+// ======================================================
+// 3. FUNÇÕES DE API (GET e POST)
+// ======================================================
 async function fetchGifts() {
     try {
         const response = await fetch(API_URL);
@@ -86,7 +108,7 @@ async function saveGift() {
     let image = document.getElementById('giftImageBase64').value;
 
     if (!name) return alert("Digite o nome!");
-    if (image.length > 4000000) return alert("Foto muito grande. Tente outra.");
+    if (image.length > 4500000) return alert("Foto muito grande. Tente outra.");
     if (!image && !editingId) image = 'https://placehold.co/150?text=Sem+Foto'; 
 
     const giftData = { name, price, image, category };
@@ -95,8 +117,10 @@ async function saveGift() {
     try {
         btnSave.innerText = "Enviando...";
         btnSave.disabled = true;
-        
-        // POST para criar
+
+        // Lógica para Criar (POST) ou Editar (PUT - se seu back suportasse, mas vamos manter simples)
+        // Se for edição, idealmente você teria que implementar PUT no server.js para dados completos.
+        // Assumindo criação para novas fotos:
         const response = await fetch(API_URL, { 
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' },
@@ -106,9 +130,11 @@ async function saveGift() {
         if (response.ok) {
             await fetchGifts();
             closeModal();
+            // Limpa tudo
+            document.getElementById('giftName').value = "";
+            document.getElementById('giftPrice').value = "";
             document.getElementById('giftImageBase64').value = "";
             document.getElementById('giftFileInput').value = "";
-            document.getElementById('imagePreview').src = "";
             document.getElementById('imagePreview').style.display = "none";
         } else {
             alert("Erro ao salvar.");
@@ -121,21 +147,33 @@ async function saveGift() {
     }
 }
 
-// --- FUNÇÕES DE TELA (QUE FALTAVAM) ---
+// ======================================================
+// 4. RENDERIZAÇÃO (Traz de volta o botão EDITAR)
+// ======================================================
 function renderGifts() {
     const container = document.getElementById('gift-container');
     if (!container) return;
     container.innerHTML = '';
     
-    // Filtra e Ordena
     const filtered = gifts.filter(item => currentFilter === 'all' || item.category === currentFilter);
+    // Ordena: Feitos por último
     filtered.sort((a, b) => a.done === b.done ? 0 : a.done ? 1 : -1);
+
+    // Observer para animar os cards que entram na tela
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) entry.target.classList.add('show');
+        });
+    });
 
     filtered.forEach((item) => {
         const card = document.createElement('div');
-        card.className = `gift-item ${item.done ? 'done' : ''}`;
+        // Adiciona a classe 'hidden' para o observer pegar
+        card.className = `gift-item hidden ${item.done ? 'done' : ''}`;
+        
         const imgUrl = item.image || 'https://placehold.co/150?text=Sem+Foto';
 
+        // AQUI ESTÁ O BOTÃO DE EDITAR DE VOLTA (btn-edit)
         card.innerHTML = `
             <img src="${imgUrl}" alt="${item.name}">
             <div class="gift-info">
@@ -143,11 +181,13 @@ function renderGifts() {
                 <span class="price">${item.price}</span>
                 <div class="card-actions">
                     <button class="btn-icon btn-check" onclick="toggleDone(${item.id})"><i class="fa-solid fa-check"></i></button>
+                    <button class="btn-icon btn-edit" onclick="editItem(${item.id})"><i class="fa-solid fa-pen"></i></button>
                     <button class="btn-icon btn-delete" onclick="openDeleteModal(${item.id})"><i class="fa-solid fa-trash"></i></button>
                 </div>
             </div>
         `;
         container.appendChild(card);
+        observer.observe(card); // Anima o card
     });
 }
 
@@ -155,9 +195,40 @@ function filterGifts(category) {
     currentFilter = category;
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.remove('active');
+        // Verifica se o onclick contem a categoria (mesmo com aspas simples)
         if(btn.getAttribute('onclick').includes(`'${category}'`)) btn.classList.add('active');
     });
     renderGifts();
+}
+
+// ======================================================
+// 5. AÇÕES DOS ITENS (Editar, Excluir, Check)
+// ======================================================
+
+// Função de preencher o modal para editar (FALTAVA ISSO)
+function editItem(id) {
+    const item = gifts.find(g => g.id === id);
+    if (!item) return;
+    
+    document.getElementById('modalTitle').innerText = "Editar (Recrie para salvar)";
+    document.getElementById('giftName').value = item.name;
+    document.getElementById('giftPrice').value = item.price;
+    document.getElementById('giftCategory').value = item.category;
+    
+    const preview = document.getElementById('imagePreview');
+    const hiddenInput = document.getElementById('giftImageBase64');
+    
+    if (item.image) {
+        preview.src = item.image; 
+        preview.style.display = "block";
+        hiddenInput.value = item.image; 
+    } else {
+        preview.style.display = "none";
+        hiddenInput.value = "";
+    }
+    
+    editingId = id; // Marca que estamos editando
+    document.getElementById('giftModal').classList.add('open');
 }
 
 async function toggleDone(id) {
@@ -165,15 +236,16 @@ async function toggleDone(id) {
     fetchGifts();
 }
 
-let idToDelete = null;
 function openDeleteModal(id) {
     idToDelete = id;
     document.getElementById('deleteModal').classList.add('open');
 }
+
 function closeDeleteModal() {
     idToDelete = null;
     document.getElementById('deleteModal').classList.remove('open');
 }
+
 async function confirmDelete() {
     if (idToDelete) {
         await fetch(`${API_URL}/${idToDelete}`, { method: 'DELETE' });
@@ -182,23 +254,52 @@ async function confirmDelete() {
     }
 }
 
-// Modais
-function openModal() { document.getElementById('giftModal').classList.add('open'); }
-function closeModal() { document.getElementById('giftModal').classList.remove('open'); }
+// ======================================================
+// 6. MODAIS E CONTADOR
+// ======================================================
+function openModal() { 
+    editingId = null;
+    document.getElementById('modalTitle').innerText = "Novo Desejo";
+    // Limpa campos
+    document.getElementById('giftName').value = "";
+    document.getElementById('giftPrice').value = "";
+    document.getElementById('giftImageBase64').value = "";
+    document.getElementById('giftFileInput').value = "";
+    document.getElementById('imagePreview').style.display = "none";
+    
+    document.getElementById('giftModal').classList.add('open'); 
+}
+
+function closeModal() { 
+    document.getElementById('giftModal').classList.remove('open'); 
+}
 
 // Contador de Dias
 function atualizarContador() {
-    const dataInicio = new Date(2025, 8, 13); // Mês 8 é Setembro (0-indexado)
+    // DATA DO INÍCIO DO NAMORO: 13 de Setembro de 2025
+    // Meses no JS começam em 0 (Janeiro=0, Setembro=8)
+    const dataInicio = new Date(2025, 8, 13); 
     const dataAtual = new Date();
     
     let anos = dataAtual.getFullYear() - dataInicio.getFullYear();
     let meses = dataAtual.getMonth() - dataInicio.getMonth();
     let dias = dataAtual.getDate() - dataInicio.getDate();
     
-    if (dias < 0) { meses--; dias += 30; }
-    if (meses < 0) { anos--; meses += 12; }
+    // Ajuste matemático de datas
+    if (dias < 0) { 
+        meses--; 
+        // Pega quantos dias tem o mês anterior para somar
+        const ultimoDiaMesAnterior = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), 0).getDate();
+        dias += ultimoDiaMesAnterior; 
+    }
+    if (meses < 0) { 
+        anos--; 
+        meses += 12; 
+    }
+    
     const totalMeses = (anos * 12) + meses;
 
+    // Atualiza na tela
     const elMeses = document.getElementById('months-count');
     const elDias = document.getElementById('days-count');
     const elTexto = document.getElementById('texto-total-dias');
