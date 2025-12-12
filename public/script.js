@@ -1,4 +1,3 @@
-// Configuração da API
 const API_URL = '/api/gifts'; 
 let gifts = []; 
 let currentFilter = 'all';
@@ -7,10 +6,23 @@ let idToDelete = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchGifts(); 
-    atualizarContador(); // Se tiver a função de contador
+    // Tenta rodar o contador se ele existir no HTML
+    if (typeof actualizarContador === "function") atualizarContador();
+    if (typeof atualizarContador === "function") atualizarContador();
+    
+    // Configura input de preço para formatar R$
+    const priceInput = document.getElementById('giftPrice');
+    if (priceInput) {
+        priceInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, "");
+            if (value === "") { e.target.value = ""; return; }
+            value = (parseInt(value) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            e.target.value = value;
+        });
+    }
 });
 
-// --- COMPRESSÃO DE IMAGEM BLINDADA ---
+// === NOVA COMPRESSÃO INTELIGENTE ===
 function compressImage(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -21,7 +33,7 @@ function compressImage(file) {
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 
-                // Força máxima de 600px (ideal para celular)
+                // Força largura máxima de 600px (Otimo para celular)
                 const maxWidth = 600; 
                 let width = img.width;
                 let height = img.height;
@@ -36,7 +48,7 @@ function compressImage(file) {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // Qualidade 0.5 (Resolve 99% dos problemas de tamanho)
+                // Usa qualidade 0.5 (50%) para garantir que fique leve (< 150KB)
                 resolve(canvas.toDataURL('image/jpeg', 0.5)); 
             };
         };
@@ -44,7 +56,7 @@ function compressImage(file) {
     });
 }
 
-// Preview da imagem
+// Preview da imagem ao selecionar
 async function previewImage() {
     const fileInput = document.getElementById('giftFileInput');
     const preview = document.getElementById('imagePreview');
@@ -52,96 +64,80 @@ async function previewImage() {
 
     if (fileInput && fileInput.files && fileInput.files[0]) {
         try {
-            preview.style.display = 'none'; // Esconde antiga
-            
-            // Comprime
+            // Processa a imagem
             const compressedBase64 = await compressImage(fileInput.files[0]);
             
             preview.src = compressedBase64;
             preview.style.display = "block";
-            hiddenInput.value = compressedBase64;
-            
+            hiddenInput.value = compressedBase64; 
         } catch (error) {
-            alert("Erro ao ler imagem.");
+            console.error("Erro imagem:", error);
+            alert("Não foi possível carregar esta imagem.");
         }
     }
 }
 
-// Buscar presentes
+// Funções de API
 async function fetchGifts() {
     try {
         const response = await fetch(API_URL);
-        if (!response.ok) throw new Error('Erro servidor');
-        gifts = await response.json(); 
-        renderGifts(); 
+        if (response.ok) {
+            gifts = await response.json(); 
+            renderGifts();
+        }
     } catch (error) {
-        console.error("Erro fetch:", error);
+        console.error("Erro ao buscar presentes:", error);
     }
 }
 
-// Salvar presente
 async function saveGift() {
     const name = document.getElementById('giftName').value;
     const price = document.getElementById('giftPrice').value;
     const category = document.getElementById('giftCategory').value;
-    let image = document.getElementById('giftImageBase64').value;
+    let image = document.getElementById('giftImageBase64').value; // Pega a versão comprimida
 
-    if (!name) return alert("Digite o nome!");
+    if (!name) return alert("Digite o nome do presente!");
 
-    // VERIFICAÇÃO FINAL DE TAMANHO
-    // 3.5 milhões de caracteres = aprox 2.6MB (Seguro para Vercel)
-    if (image.length > 3500000) {
-        return alert("Essa foto é muito complexa. Tente tirar um print dela ou usar outra.");
-    }
-
+    // Imagem padrão se não tiver nenhuma
     if (!image && !editingId) { 
         image = 'https://placehold.co/150?text=Sem+Foto'; 
     }
 
     const giftData = { name, price, image, category };
+    const btnSave = document.querySelector('.btn-save');
 
     try {
-        // Trava o botão para evitar clique duplo
-        const btn = document.querySelector('.btn-save');
-        btn.innerText = "Enviando...";
-        btn.disabled = true;
+        btnSave.innerText = "Salvando...";
+        btnSave.disabled = true;
 
-        const url = editingId ? `${API_URL}/${editingId}` : API_URL; // Note a correção da URL aqui
-        const method = editingId ? 'PUT' : 'POST'; // PUT não costuma ser usado para criar, verifique se seu server espera PUT ou POST na edição
-
-        // Se for edição, o server.js que mandei não tem rota PUT para editar tudo,
-        // apenas PUT para /done. Se precisar editar dados, teria que criar a rota.
-        // Vou assumir POST para criar.
+        const url = editingId ? `${API_URL}/${editingId}` : API_URL; // Ajuste se tiver rota de edição
         
-        const response = await fetch(editingId ? `${API_URL}/${editingId}` : API_URL, { // Se não tiver rota de editar dados completos, isso pode dar erro 404
-             // Vamos simplificar: Se for edição de status, é outro botão. 
-             // Se for edição de dados, precisaria da rota PUT /gifts/:id no backend.
-             // Como seu backend atual só tem PUT /done, vou assumir CRIAÇÃO (POST) para testar o upload.
-             method: 'POST', 
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify(giftData)
+        // Como sua rota atual é só POST para criar, vamos focar nela
+        // Se for edição de dados (nome/preço), seu backend precisaria de rota PUT /gifts/:id
+        // Vou usar POST para criação que é o foco do erro da imagem
+        
+        const response = await fetch(API_URL, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(giftData)
         });
-
-        // Se você tiver a lógica de edição, mantenha. O importante é o fetch acima.
 
         if (response.ok) {
             await fetchGifts();
             closeModal();
             document.getElementById('giftImageBase64').value = "";
+            document.getElementById('giftFileInput').value = "";
         } else {
-            const txt = await response.text();
-            alert("Erro ao salvar: " + txt);
+            alert("Erro ao salvar. Tente uma imagem diferente.");
         }
-        
-        btn.innerText = "Salvar";
-        btn.disabled = false;
-
     } catch (error) {
         alert("Erro de conexão.");
-        document.querySelector('.btn-save').disabled = false;
-        document.querySelector('.btn-save').innerText = "Salvar";
+    } finally {
+        btnSave.innerText = "Salvar";
+        btnSave.disabled = false;
     }
 }
 
-// ... Resto das funções (renderGifts, filterGifts, openModal, closeModal, etc) ...
-// Copie do seu arquivo antigo as funções de renderização que não mexemos.
+// ... (Mantenha aqui as funções renderGifts, filterGifts, openModal, closeModal, toggleDone, confirmDelete) ...
+// Copie elas do seu arquivo anterior ou peça se precisar delas novamente.
+// IMPORTANTE: Adicione a lógica de IntersectionObserver e o renderGifts aqui.

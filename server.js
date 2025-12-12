@@ -8,21 +8,21 @@ const port = process.env.PORT || 5000;
 
 app.use(cors());
 
-// --- AQUI ESTÁ O SEGREDO ---
-// Definimos 4MB. Isso é o limite seguro da Vercel.
-// Se passar de 4MB, a Vercel corta. Se for menos, o Express aceita.
+// 1. Aumenta limite para 4MB (Limite seguro do Vercel Grátis)
 app.use(express.json({ limit: '4mb' }));
 app.use(express.urlencoded({ limit: '4mb', extended: true }));
 
-// Serve os arquivos da pasta public
+// 2. Entrega o Site (Arquivos Estáticos)
+// O Express vai procurar index.html, styles.css e script.js aqui
 app.use(express.static(path.join(process.cwd(), 'public')));
 
-// Banco de Dados
+// 3. Banco de Dados
 const pool = new Pool({
     connectionString: process.env.POSTGRES_URL,
     ssl: { rejectUnauthorized: false }
 });
 
+// 4. Rotas da API
 const router = express.Router();
 
 router.get('/gifts', async (req, res) => {
@@ -39,9 +39,9 @@ router.post('/gifts', async (req, res) => {
     try {
         const { name, price, image, category } = req.body;
         
-        // Proteção extra no servidor
+        // Proteção silenciosa: se passar de 4.5MB, avisa
         if (image && image.length > 4500000) {
-            return res.status(413).send('Imagem muito grande para o servidor.');
+            return res.status(413).send('Imagem muito grande.');
         }
 
         const newGift = await pool.query(
@@ -51,7 +51,7 @@ router.post('/gifts', async (req, res) => {
         res.json({ id: newGift.rows[0].id, message: 'Gift created' });
     } catch (err) {
         console.error("Erro ao salvar:", err.message);
-        res.status(500).send('Erro ao salvar no banco');
+        res.status(500).send('Erro ao salvar');
     }
 });
 
@@ -76,6 +76,10 @@ router.delete('/gifts/:id', async (req, res) => {
 });
 
 app.use('/api', router);
+
+// --- SEM ROTA app.get NO FINAL ---
+// Removemos a causa do erro 500.
+// Se o arquivo não existir na pasta public, dará 404 normal, sem derrubar o site.
 
 app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
