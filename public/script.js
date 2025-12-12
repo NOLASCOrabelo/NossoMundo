@@ -49,15 +49,18 @@ async function fetchGifts() {
     }
 }
 
-// SALVAR OU EDITAR (POST / PUT)
 async function saveGift() {
     const name = document.getElementById('giftName').value;
     const price = document.getElementById('giftPrice').value;
     const category = document.getElementById('giftCategory').value;
+    
+    // O SEGREDO ESTÁ AQUI: 
+    // Pegamos a imagem comprimida do input escondido, NÃO do arquivo original
     let image = document.getElementById('giftImageBase64').value;
 
     if (!name) return alert("Digite o nome do presente!");
 
+    // Se não tiver imagem, usa uma padrão
     if (!image && !editingId) { 
         image = 'https://placehold.co/150?text=Sem+Foto'; 
     }
@@ -65,28 +68,27 @@ async function saveGift() {
     const giftData = { name, price, image, category };
 
     try {
-        if (editingId) {
-            // --- MODO EDIÇÃO (PUT) ---
-            await fetch(`${API_URL}/${editingId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(giftData)
-            });
+        const url = editingId ? `/api/gifts/${editingId}` : '/api/gifts';
+        const method = editingId ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(giftData)
+        });
+
+        if (response.ok) {
+            await fetchGifts();
+            closeModal();
+            // Limpa o campo hidden para o próximo
+            document.getElementById('giftImageBase64').value = ""; 
         } else {
-            // --- MODO CRIAÇÃO (POST) ---
-            await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(giftData)
-            });
+            alert("Erro ao salvar (Tamanho ou Servidor). Tente uma foto menor.");
         }
-        
-        await fetchGifts(); // Recarrega lista atualizada do banco
-        closeModal();
 
     } catch (error) {
-        console.error("Erro ao salvar:", error);
-        alert("Erro ao salvar. Verifique se o servidor está rodando.");
+        console.error("Erro:", error);
+        alert("Erro de conexão.");
     }
 }
 
@@ -278,7 +280,7 @@ async function previewImage() {
     if (fileInput && fileInput.files && fileInput.files[0]) {
         try {
             // Chama a compressão: Max 1000px, Qualidade 0.6
-            const compressedBase64 = await compressImage(fileInput.files[0], 1000, 0.6);
+            const compressedBase64 = await compressImage(fileInput.files[0], 800, 0.6);
             
             // Verifica o tamanho final (apenas para debug no console)
             console.log("Tamanho original:", fileInput.files[0].size);
