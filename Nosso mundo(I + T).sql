@@ -5,7 +5,7 @@ id SERIAL PRIMARY KEY,
     image TEXT, -- Vamos salvar a string Base64 aqui por enquanto (simples)
     category VARCHAR(50),
     done BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
     
     CREATE TABLE reasons (
     id SERIAL PRIMARY KEY,
